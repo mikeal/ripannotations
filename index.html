@@ -1,0 +1,295 @@
+<head><title>RiP: Annotations Remix</title></head>
+
+<body>
+  
+<script src="http://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js" type="text/javascript"></script>
+  
+<style type="text/css">
+
+td.credits {
+  text-align:left;
+  font-size:16px;
+  width: 5%;
+}
+td.title {
+  width: 90%;
+  text-align: center;
+  font-weight:bold;
+  }
+td.contact {
+  text-align: right;
+  font-size:16px;
+  width: 5%;
+} 
+
+a:link {
+  color: #222222;
+}
+a:visited {
+  color: #222222;
+}
+
+div.header {
+  padding-right: 50px;
+  padding-left: 50px;
+}
+ 
+tr.header{
+  width:100%;
+  margin:0 auto;
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:18px;
+  padding-bottom:2px;
+}
+div.error {
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:18px;
+  color:#EE0000;
+  text-align: center;
+}
+div.success {
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:18px;
+  color:#2E37FE;
+  text-align: center;
+}
+  
+div.video-container {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+div.form-container {
+  padding-top: 5px;
+  text-align:center;
+  margin-left: auto;
+  margin-right: auto;
+  color:#222222;
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:20px;
+}
+div.time-container {
+  padding-bottom:5px;
+}
+input.time {
+  width:50px;
+  color:#222222;
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:20px;
+}
+input.duration {
+  width:30px;
+  color:#222222;
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:20px;
+}
+
+textarea.annotation {
+  color:#222222;
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:20px;
+  width: 600px;
+  height: 100px;
+}
+div.submit {
+  padding-top: 5px;
+  border:solid 1px;
+  width: 150px;
+  background-color: #FFFFF0;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.submit a:link {
+  text-decoration: none;
+  color: #222222;
+}
+
+table.annotation-table {
+  font-family:"Sabon LT Std","Hoefler Text","Palatino Linotype","Book Antiqua",serif;
+  font-size:25px;
+  width:100%;
+  margin:0 auto;
+}
+td.cell-time {
+  text-align: left;
+  width:5%;
+}
+td.cell-text {
+  text-align: center;
+  width:90%;
+}
+td.cell-timeRemaining {
+  text-align: right;
+  float: center;
+  width:5%;
+}
+div.mkd-note {
+  font-size:14px;
+}
+
+</style>  
+<div class="header">
+  <table class="header">
+    <tr class="header">
+      <td class="credits"><a href="/credits.html">credits</a></td>
+      <td class="title">RiP: Annotations Remix</td>
+      <td class="contact"><a href="http://groups.google.com/group/rip-annotations">contact</a></td>
+    </tr>
+  </table>
+</div>
+  
+<div class="video-container" id="video-container">
+  <video src="http://ripannotations.pythonesque.org/RiP.mobile.theora.ogg"  controls autoplay id="v">
+      <div class="error">You need to run a <a href="http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-mozilla-1.9.1/">Firefox 3.5 nightly</a></div>
+  </video>
+</div>
+
+<div class="form-container">
+  <form action>
+    <div class="mkd-note">sorry, no raw html :( you can use <a href="http://daringfireball.net/projects/markdown/">markdown</a> instead</div>
+    <textarea id="annotation" class="annotation" name="annotation"></textarea><br>
+      <div class="time-container">
+        @ <input class="time" type="text" name="time" id="time"/>
+        for <input class="duration" type="text" name="duration" id="duration" value="30"> seconds
+        <input type="hidden" name="startime" id="starttime">
+    </div>
+    <div class="submit"><a href="javascript:addAnnotation()">Add Annotation</a></div>
+    <div class="error" id="error"></div>
+    <div class="success" id="success"></div>
+  </form>
+</div>
+
+<div class="annotations-container" id="annotations-container">
+  <div class="annotions-inner" id="annotations-inner">
+  </div>
+</div>
+
+<script type="text/javascript">
+
+String.prototype.pad = function(l, s){
+    return (l -= this.length) > 0
+        ? (s = new Array(Math.ceil(l / s.length) + 1).join(s)).substr(0, s.length) + this + s.substr(0, l - s.length)
+        : this;
+};
+
+Array.prototype.inArray = function (value)
+// Returns true if the passed value is found in the
+// array. Returns false if it is not.
+{
+var i;
+for (i=0; i < this.length; i++) {
+// Matches identical (===), not just similar (==).
+if (this[i] === value) {
+return true;
+}
+}
+return false;
+};
+
+var v = document.getElementById("v");
+
+v.addEventListener("timeupdate", 
+  function () { 
+    var seconds = v.currentTime;
+      document.getElementById("starttime").value = seconds;
+      var timeString = Math.floor(seconds / 60) + ":" + (seconds % 60).toFixed().pad(2, "0");
+      if (timeString != document.getElementById("time").value ) {
+        if (!document.getElementById("time").hasFocus()) {
+          document.getElementById("time").value = timeString; 
+          updateAnnotations(seconds);
+          }
+        }
+      },
+    true);
+
+
+var addAnnotation = function () {
+  var body = {};
+  body.time = document.getElementById("time").value
+  body.starttime = Number(document.getElementById("starttime").value)
+  body.annotation = document.getElementById("annotation").value
+  body.duration = Number(document.getElementById("duration").value)
+  
+  var req = new XMLHttpRequest();  
+  req.open("POST", "/add-annotation", false);
+  req.setRequestHeader('Content-Type', 'application/json');
+  req.send(JSON.stringify(body));
+  if (req.status != 201) {
+    document.getElementById("error").textContent = req.responseText;
+  } else {
+    document.getElementById("annotation").value = '';
+    document.getElementById("error").textContent = '';
+    document.getElementById("success").textContent = "Added Your Annotation!";
+    setTimeout("document.getElementById('success').textContent = '';", 5000)
+  }
+}
+
+var getColor = function () {
+  return '#222222';
+}
+
+var addFocus = function () {
+  var elem = document.getElementById("time")
+  elem.focused = false;
+  elem.hasFocus = function() {
+    return this.focused;
+  };
+  elem.onfocus=function() {
+    this.focused=true;
+  };
+  elem.onblur=function() {
+    this.focused=false;
+  };
+}
+addFocus();
+
+$("input#time").change(function() {
+    var time = document.getElementById("time").value;
+    var t = ( Number(time.split(":")[0]) * 60 ) + ( Number(time.split(":")[1]) );
+    v.currentTime = t;
+    }
+  )
+
+var updateAnnotations = function (time) {
+  var req = new XMLHttpRequest();
+  req.open("GET", "/get-annotations?time="+time, false);
+  req.setRequestHeader('Content-Type', 'application/json');
+  req.send(null);
+  if (req.status != 200) {
+    // document.getElementById("error").textContent = req.responseText;
+  } else {
+    // document.getElementById("success").textContent = req.responseText;
+    var annotations = JSON.parse(req.responseText);
+    $("div#annotations-inner").remove();
+    $('<div id="annotations-inner" class="annotations-inner"></div>'
+        ).appendTo("div#annotations-container");
+    var time = v.currentTime;
+    for each(a in annotations) {
+      if (a.rendered) {
+        var seconds = time - a.starttime - a.duration
+        var timeRemaining = (seconds % 60).toFixed().pad(2, "0");
+        divText = '<table id="annotation-table" class="annotation-table">'+
+                  '<tr id="'+a._id+'" style="color:'+getColor()+';">'+
+                  '<td class="cell-time">'+a.time+'</td>'+
+                  '<td class="cell-text">'+a.rendered+'</td>'+
+                  '<td class="cell-timeRemaining">'+timeRemaining+'</td></tr></table>'
+        $(divText).prependTo("div#annotations-inner")
+      }
+    }
+  }
+}
+ 
+</script>
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-3515839-7");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+
+</body>  
